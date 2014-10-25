@@ -1,0 +1,23 @@
+{
+    "name": "lotemplate",
+    "version": "1.0.0",
+    "description": "sync and cache template system using lodash template in node.js",
+    "main": "lotemplate.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "lodash",
+        "template"
+    ],
+    "author": "Eric Fong <ericff@gmail.com>",
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ericfong/lotemplate.git"
+    },
+    "dependencies": {
+        "debug": "^2.1.0",
+        "lodash": "^2.4.1"
+    }
+}
