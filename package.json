@@ -1,6 +1,6 @@
 {
     "name": "lotemplate",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "sync and cache template system using lodash template in node.js",
     "main": "lotemplate.js",
     "scripts": {
