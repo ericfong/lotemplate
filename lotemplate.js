@@ -6,13 +6,14 @@ var _ = require('lodash');
 var debug = require('debug')('lotemplate');
 
 
-var self = module.exports = function(templateName, data) {
+var self = module.exports = function(templateName, data, opt) {
     if (!templateName) throw new Error('templateName cannot be '+templateName);
+    opt = opt || {};
 
     // map object
     if (typeof templateName != 'string') {
         return _.mapValues(templateName, function(temp) {
-            var ret = self(temp, data);
+            var ret = self(temp, data, opt);
             if (!ret) {
                 throw new Error('Template Not Found: '+temp);
             }
@@ -26,9 +27,12 @@ var self = module.exports = function(templateName, data) {
     if (templateName in self.compiles) {
         var templateFunc = self.compiles[templateName];
         if (templateFunc) {
+            // if (opt.sourceOnly) {
+            //     return templateFunc.__source;
+            // }
             try {
                 // context
-                _.extend(data, templateFunc.__paths);
+                _.extend(data, templateFunc.__templateData);
                 // never JSON to the whole thing
                 data.data = data;
                 var ret = templateFunc(data);
@@ -37,7 +41,7 @@ var self = module.exports = function(templateName, data) {
                 }
                 return ret;
             } catch(e) {
-                console.error(templateName);
+                console.error(templateName, e.source);
                 throw e
             }
         } else {
@@ -53,7 +57,7 @@ var self = module.exports = function(templateName, data) {
     var realName = null;
     var realNames = [];
     debug('template finding: ', tDir, tBase);
-    while ( tDir.length > 0 && !templateSrc) {
+    while ( tDir !== null && !templateSrc) {
         realName = tDir+'/'+tBase;
         realNames.push(realName);
 
@@ -65,10 +69,10 @@ var self = module.exports = function(templateName, data) {
         }
 
         // length > 2 to prevent '.' and '..'
-        if (tDir.length > 2) {
-            tDir = Path.dirname(tDir);
+        if (!tDir) {
+            tDir = null;
         } else {
-            tDir = '';
+            tDir = Path.dirname(tDir);
         }
     }
 
@@ -85,30 +89,36 @@ var self = module.exports = function(templateName, data) {
                     return script.runInNewContext(data);
                 }
             } else {
-                templateFunc = _.template(templateSrc);
+                templateFunc = _.template(templateSrc, null, opt);
             }
 
-            templateFunc.__paths = {};
-            templateFunc.__paths.__filename = sourceFilepath;
-            templateFunc.__paths.__dirname = Path.dirname(sourceFilepath);
-            templateFunc.__paths.__realName = realName;
-            templateFunc.__paths.__realDir = Path.dirname(realName);
-            templateFunc.__paths.__targetName = templateName;
-            templateFunc.__paths.__targetDir = Path.dirname(templateName);
+            templateFunc.__source = templateSrc;
+            templateFunc.__templateData = {};
+            templateFunc.__templateData.__options = opt;
+            templateFunc.__templateData.__filename = sourceFilepath;
+            templateFunc.__templateData.__dirname = Path.dirname(sourceFilepath);
+            templateFunc.__templateData.__realName = realName;
+            templateFunc.__templateData.__realDir = Path.dirname(realName);
+            templateFunc.__templateData.__targetName = templateName;
+            templateFunc.__templateData.__targetDir = Path.dirname(templateName);
 
             // render
             if (templateFunc) {
-                // context
-                _.extend(data, templateFunc.__paths);
-                // never JSON to the whole thing
-                data.data = data;
-                ret = templateFunc(data);
-                if (self.trimOutput && typeof ret == 'string') {
-                    ret = ret.trim();
-                }
+                // if (opt.sourceOnly) {
+                //     ret = templateFunc.__source;
+                // } else {
+                    // context
+                    _.extend(data, templateFunc.__templateData);
+                    // never JSON to the whole thing
+                    data.data = data;
+                    ret = templateFunc(data);
+                    if (self.trimOutput && typeof ret == 'string') {
+                        ret = ret.trim();
+                    }
+                // }
             }
         } catch(e) {
-            console.error(sourceFilepath);
+            console.error(sourceFilepath, e.source);
             throw e
         }
     }
